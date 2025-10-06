@@ -1,6 +1,7 @@
+/* eslint-disable no-unused-vars */
 import { NODE_ENV } from "../config/env.js";
 
-const errorHandler = (err, req, res) => {
+const errorHandler = (err, req, res, next) => {
   try {
     // Default error properties
     let statusCode = err.statusCode || 500;
