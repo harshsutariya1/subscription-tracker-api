@@ -18,7 +18,9 @@ const errorHandler = (err, req, res, next) => {
       message = "Invalid ID format";
     } else if (err.code === 11000) {
       statusCode = 400;
-      message = "Duplicate field value entered";
+      // Extract field name from duplicate key error
+      const field = Object.keys(err.keyPattern || {})[0] || "field";
+      message = `Duplicate value for ${field}. Please use a different value.`;
     } else if (err.name === "JsonWebTokenError") {
       statusCode = 401;
       message = "Invalid token";
@@ -43,16 +45,37 @@ const errorHandler = (err, req, res, next) => {
       statusCode = 401;
       message = "Unauthorized";
     }
+    // Handle MongoDB transaction errors
+    else if (
+      err.name === "MongoServerError" &&
+      err.hasErrorLabel?.("TransientTransactionError")
+    ) {
+      statusCode = 503;
+      message = "Transaction failed. Please try again.";
+    } else if (
+      err.name === "MongoServerError" &&
+      err.hasErrorLabel?.("UnknownTransactionCommitResult")
+    ) {
+      statusCode = 503;
+      message = "Transaction commit status unknown. Please verify and retry.";
+    }
     // Catch-all for unknown errors
     else {
-      statusCode = 500;
-      message = "Something went wrong";
+      statusCode = err.statusCode || 500;
+      message = err.message || "Something went wrong";
     }
 
     // Log error in development
     if (NODE_ENV === "development") {
       console.error(err);
-      errorDetails = err.stack || errorDetails;
+      errorDetails = {
+        stack: err.stack,
+        url: req.url,
+        method: req.method,
+        body: req.body,
+        params: req.params,
+        query: req.query,
+      };
     } else {
       // In production, log minimal info without sensitive data
       console.error(
