@@ -1,5 +1,5 @@
 import aj from '../config/arcjet.js';
-import { NODE_ENV } from '../config/env.js';
+// import { NODE_ENV } from '../config/env.js';
 
 const arcjetMiddleware = async (req, res, next) => {
     try {
@@ -7,11 +7,11 @@ const arcjetMiddleware = async (req, res, next) => {
 
         // (|| NODE_ENV === 'development') temp. condition
         // Skip Arcjet in development
-        if (NODE_ENV === "development") {
-            return next();
-        }
+        // if (NODE_ENV === "development") {
+        //     return next();
+        // }
 
-        if (decision.isDenied) {
+        if (decision.isDenied()) {
             if (decision.reason.isRateLimit()) {
                 const error = new Error("Too many requests - try again later");
                 error.statusCode = 429;
